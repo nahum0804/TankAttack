@@ -44,7 +44,7 @@ insertTanks n board = do
 insertObstacle :: Int -> [[Char]] -> [[Char]]
 insertObstacle 0 board = board
 insertObstacle n board = do
-  (row, col) <- findEmptyPosition board
+  (row, col) <- findEmptyPosition board  -- <---- Error
   let updatedBoard = insertAt row col 'O' board
   insertObstacle (n - 1) updatedBoard
 
