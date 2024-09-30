@@ -4,6 +4,7 @@ import math
 import time
 import socket
 import ast
+import random
 
 pygame.init()
 
@@ -51,7 +52,9 @@ enemy_up = pygame.transform.scale(pygame.image.load('./assets/sprite-enemy-up.pn
 enemy_down = pygame.transform.scale(pygame.image.load('./assets/sprite-enemy-down.png'), (TILE_SIZE, TILE_SIZE))
 enemy_left = pygame.transform.scale(pygame.image.load('./assets/sprite-enemy-left.png'), (TILE_SIZE, TILE_SIZE))
 enemy_right = pygame.transform.scale(pygame.image.load('./assets/sprite-enemy-right.png'), (TILE_SIZE, TILE_SIZE))
-
+bullet_sound = pygame.mixer.Sound('./assets/piupiu.wav')
+explosion_sound = pygame.mixer.Sound('./assets/explosion.wav')
+explosion_image = pygame.transform.scale(pygame.image.load('./assets/explosion.png'), (TILE_SIZE, TILE_SIZE))
 
 def peticion(message):
     # Crear un socket TCP/IP
@@ -132,13 +135,11 @@ class Enemy():
                 continue
 
             if board[int(bullet[1])][int(bullet[0])] == 1:
-                print("¡La bala chocó contra un muro!")
                 enemy_bullets_to_remove.append(bullet)
                 continue
 
             if int(bullet[0]) == player_pos[1] and int(bullet[1]) == player_pos[0]:
                 player_lives -= 1
-                print("¡El enemigo te ha disparado!")
                 enemy_bullets_to_remove.append(bullet)
                 continue
 
@@ -202,7 +203,23 @@ class Enemy():
             if result:
                 self.movments = result[:5]
 
-enemys = [Enemy([10, 10]), Enemy([10, 1]), Enemy([10, 5])]
+enemys = []
+
+def generateEnemys(num_enemys):
+    global enemys
+    possible_positions = []
+    for x in range(1,11):
+        for y in range(1,11):
+            if(board[x][y]==0): possible_positions.append([x,y])
+    random.seed(time.time())
+    while num_enemys!=0:
+        aleatory_number = random.randint(0, possible_positions.__len__())
+        if aleatory_number == player_pos:
+            aleatory_number = random.randint(0, possible_positions.__len__())
+        enemys.append(Enemy(possible_positions[aleatory_number]))
+        num_enemys-=1
+
+
 bullets = []
 
 def draw_board():
@@ -290,7 +307,6 @@ def update_bullets():
                 continue
 
             if int(bullet[0]) == enemy.position[1] and int(bullet[1]) == enemy.position[0]:
-                print("¡Disparo impactó al enemigo!")
                 enemy.lives -= 1
                 if enemy.lives == 0 and not enemy.is_exploding:
                     enemy.trigger_explosion()
@@ -298,7 +314,6 @@ def update_bullets():
                 continue
 
             if board[int(bullet[1])][int(bullet[0])] == 1:  # Si hay un muro
-                print("¡La bala chocó contra un muro!")
                 bullets_to_remove.append(bullet)
 
         for bullet in bullets_to_remove:
@@ -321,51 +336,37 @@ def show_victory():
     pygame.display.flip()
     time.sleep(3)
 
-def draw_enemys():
-    for enemy in enemys:
-        enemy.draw_enemy()
 
 def move_enemys():
     for enemy in enemys:
         enemy.move()
 
-
-def draw_enemys_bullets():
-    for enemy in enemys:
-        enemy.draw_enemy_bullets()
-
-
-def update_enemys_bullets():
-    for enemy in enemys:
-        enemy.update_enemy_bullets()
-
+def update_enemys():
+        for enemy in enemys:
+            enemy.draw_enemy()
+            enemy.draw_enemy_bullets()
+            enemy.update_enemy_bullets()
+            enemy.update_explosion()
 
 def enemys_shoot():
     for enemy in enemys:
         enemy.enemy_shoot()
 
-def update_explosions():
-    for enemy in enemys:
-        enemy.update_explosion()
+        
 
-bullet_sound = pygame.mixer.Sound('./assets/piupiu.wav')
-explosion_sound = pygame.mixer.Sound('./assets/explosion.wav')
-explosion_image = pygame.transform.scale(pygame.image.load('./assets/explosion.png'), (TILE_SIZE, TILE_SIZE))
 
+generateEnemys(3)
 
 # Ciclo principal del juego
 while True:
     screen.fill(WHITE)
     draw_board()
     draw_player()
-    draw_enemys()
     draw_bullets()
-    draw_enemys_bullets()
+    update_enemys()
 
     # Mover las balas
     update_bullets()
-    update_enemys_bullets()
-    update_explosions()
 
     if not enemys:
         show_victory()
